@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sentential Logic Translation Practice</title>
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --panel: #ffffff;
+      --ink: #172033;
+      --muted: #64708a;
+      --line: #d8deea;
+      --accent: #4056d6;
+      --accent-soft: #e9edff;
+      --good: #18794e;
+      --good-bg: #e9f8f0;
+      --bad: #b42318;
+      --bad-bg: #fff0ee;
+      --warn: #9a6700;
+      --warn-bg: #fff7d6;
+      --shadow: 0 12px 30px rgba(31, 42, 68, 0.09);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(64, 86, 214, .13), transparent 28rem),
+        var(--bg);
+    }
+
+    button, select { font: inherit; }
+
+    .app {
+      width: min(1120px, calc(100% - 32px));
+      margin: 32px auto 56px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.75rem, 4vw, 2.7rem);
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      max-width: 720px;
+      line-height: 1.55;
+    }
+
+    .score-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 16px;
+      box-shadow: var(--shadow);
+      min-width: 150px;
+      text-align: center;
+    }
+
+    .score-card strong { font-size: 1.4rem; display: block; }
+    .score-card span { color: var(--muted); font-size: .86rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 22px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .main-panel { padding: 26px; }
+    .side-panel { padding: 22px; height: fit-content; }
+
+    .eyebrow {
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      font-weight: 800;
+      font-size: .72rem;
+      margin-bottom: 10px;
+    }
+
+    .prompt {
+      font-size: clamp(1.15rem, 2.5vw, 1.55rem);
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    .dictionary {
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      background: #fafbfe;
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: grid;
+      gap: 8px;
+      color: #34405a;
+    }
+
+    .dictionary code {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .builder-title {
+      margin: 26px 0 10px;
+      font-size: .95rem;
+      font-weight: 800;
+    }
+
+    .answer-zone {
+      min-height: 88px;
+      border: 2px dashed #b6c0d5;
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      align-content: center;
+      flex-wrap: wrap;
+      gap: 9px;
+      background: #fbfcff;
+      transition: .2s ease;
+    }
+
+    .answer-zone.dragover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      transform: translateY(-1px);
+    }
+
+    .empty-message {
+      color: var(--muted);
+      font-size: .95rem;
+      margin: auto;
+      pointer-events: none;
+    }
+
+    .token-bank {
+      display: grid;
+      gap: 13px;
+      margin-top: 16px;
+    }
+
+    .bank-row {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: #fafbfe;
+    }
+
+    .bank-label {
+      display: block;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: .78rem;
+      margin-bottom: 9px;
+    }
+
+    .token-list { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .token {
+      border: 1px solid #bcc6dc;
+      background: white;
+      color: var(--ink);
+      border-radius: 10px;
+      min-width: 42px;
+      padding: 9px 12px;
+      font-weight: 850;
+      cursor: grab;
+      user-select: none;
+      box-shadow: 0 3px 8px rgba(31, 42, 68, .07);
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+
+    .token:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+      box-shadow: 0 7px 16px rgba(31, 42, 68, .12);
+    }
+
+    .token:active { cursor: grabbing; }
+    .token.used { opacity: .35; }
+    .token.answer-token { cursor: pointer; }
+    .token.connective { color: #7b2cbf; }
+    .token.letter { color: #075985; }
+    .token.paren { color: #9a3412; }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 11px;
+      padding: 10px 15px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .15s ease, opacity .15s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn.primary { background: var(--accent); color: white; }
+    .btn.secondary { background: #edf0f7; color: #26324d; }
+    .btn.ghost { background: transparent; color: var(--accent); border: 1px solid #bfc8e4; }
+
+    .feedback {
+      display: none;
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 13px;
+      line-height: 1.45;
+      font-weight: 650;
+    }
+
+    .feedback.show { display: block; }
+    .feedback.good { color: var(--good); background: var(--good-bg); border: 1px solid #b7e5cb; }
+    .feedback.bad { color: var(--bad); background: var(--bad-bg); border: 1px solid #ffc9c2; }
+    .feedback.warn { color: var(--warn); background: var(--warn-bg); border: 1px solid #f2db88; }
+
+    .side-panel h2 {
+      margin: 0 0 14px;
+      font-size: 1.08rem;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 9px 10px;
+      align-items: center;
+      font-size: .91rem;
+      margin-bottom: 22px;
+    }
+
+    .symbol {
+      font-size: 1.18rem;
+      font-weight: 900;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    .side-section {
+      border-top: 1px solid var(--line);
+      padding-top: 18px;
+      margin-top: 18px;
+    }
+
+    .side-section p, .side-section li {
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1.5;
+    }
+
+    .side-section ul { padding-left: 18px; margin-bottom: 0; }
+
+    .mode-row {
+      display: grid;
+      gap: 7px;
+      margin-bottom: 18px;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+      color: var(--ink);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 850px) {
+      .grid { grid-template-columns: 1fr; }
+      header { flex-direction: column; }
+      .score-card { width: 100%; text-align: left; }
+    }
+
+    @media (max-width: 520px) {
+      .app { width: min(100% - 18px, 1120px); margin-top: 12px; }
+      .main-panel, .side-panel { padding: 18px; }
+      .token { min-width: 38px; padding: 9px 10px; }
+    }
+
+    /* Smart-board layout: compact, touch-friendly, and locked to one screen. */
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: none;
+    }
+
+    body { min-height: 0; }
+
+    .app {
+      width: min(1240px, calc(100% - 20px));
+      height: 100vh;
+      margin: 0 auto;
+      padding: 10px 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 10px;
+      flex: 0 0 auto;
+    }
+
+    h1 {
+      margin-bottom: 2px;
+      font-size: clamp(1.45rem, 2.7vw, 2.15rem);
+    }
+
+    .subtitle {
+      font-size: .88rem;
+      line-height: 1.3;
+      max-width: 850px;
+    }
+
+    .score-card {
+      min-width: 132px;
+      padding: 7px 12px;
+      box-shadow: 0 5px 14px rgba(31, 42, 68, .08);
+    }
+
+    .score-card strong { font-size: 1.15rem; }
+    .score-card span { font-size: .75rem; }
+
+    .grid {
+      min-height: 0;
+      flex: 1 1 auto;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      gap: 10px;
+    }
+
+    .panel { border-radius: 14px; }
+
+    .main-panel {
+      min-height: 0;
+      padding: 14px 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .side-panel {
+      min-height: 0;
+      height: 100%;
+      padding: 14px;
+      overflow: hidden;
+    }
+
+    .eyebrow { margin-bottom: 4px; font-size: .65rem; }
+    .prompt { font-size: clamp(1rem, 1.8vw, 1.3rem); line-height: 1.25; }
+
+    .dictionary {
+      margin-top: 8px;
+      padding: 8px 10px;
+      gap: 3px;
+      border-radius: 10px;
+      font-size: .87rem;
+    }
+
+    .dictionary code { font-size: .9rem; }
+    .builder-title { margin: 10px 0 5px; font-size: .82rem; }
+
+    .answer-zone {
+      min-height: 62px;
+      padding: 8px;
+      gap: 6px;
+      border-radius: 12px;
+    }
+
+    .empty-message { font-size: .82rem; }
+
+    .token-bank {
+      grid-template-columns: 1fr 1.8fr .65fr;
+      gap: 7px;
+      margin-top: 8px;
+    }
+
+    .bank-row {
+      min-width: 0;
+      padding: 7px;
+      border-radius: 10px;
+    }
+
+    .bank-label { margin-bottom: 5px; font-size: .66rem; }
+    .token-list { gap: 5px; }
+
+    .token {
+      min-width: 38px;
+      padding: 7px 9px;
+      border-radius: 8px;
+      font-size: 1rem;
+      box-shadow: 0 2px 5px rgba(31, 42, 68, .06);
+    }
+
+    .controls { gap: 7px; margin-top: 9px; }
+    .btn { padding: 8px 11px; border-radius: 9px; font-size: .86rem; }
+
+    .feedback {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      line-height: 1.25;
+      font-size: .84rem;
+    }
+
+    .mode-row { gap: 4px; margin-bottom: 10px; }
+    select { padding: 7px 9px; font-size: .84rem; }
+    .side-panel h2 { margin-bottom: 7px; font-size: .92rem; }
+
+    .legend {
+      grid-template-columns: 32px 1fr;
+      gap: 4px 7px;
+      margin-bottom: 10px;
+      font-size: .8rem;
+    }
+
+    .symbol { font-size: 1rem; }
+    .side-section { padding-top: 8px; margin-top: 8px; }
+    .side-section p, .side-section li { font-size: .76rem; line-height: 1.3; }
+    .side-section ul { padding-left: 15px; margin-top: 5px; }
+
+    @media (max-height: 720px) {
+      .subtitle, .side-section:last-child { display: none; }
+      .app { padding: 6px 0; }
+      header { margin-bottom: 6px; }
+      .main-panel { padding: 10px 12px; }
+      .dictionary { margin-top: 5px; }
+      .answer-zone { min-height: 52px; }
+      .token { padding: 5px 8px; }
+      .controls { margin-top: 6px; }
+    }
+
+    @media (max-width: 850px) {
+      .app { width: calc(100% - 12px); }
+      header { flex-direction: row; }
+      .score-card { width: auto; text-align: center; }
+      .grid { grid-template-columns: minmax(0, 1fr) 220px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <h1>Sentential Logic Builder</h1>
+        <p class="subtitle">Translate each English sentence by dragging sentence letters, connectives, and parentheses into the answer area. Any logically equivalent formula is accepted.</p>
+      </div>
+      <div class="score-card" aria-live="polite">
+        <strong><span id="score">0</span>/<span id="attempted">0</span></strong>
+        <span>correct translations</span>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="panel main-panel">
+        <div class="eyebrow">Translate this sentence</div>
+        <p class="prompt" id="promptText"></p>
+        <div class="dictionary" id="dictionary"></div>
+
+        <div class="builder-title">Build your formula</div>
+        <div id="answerZone" class="answer-zone" aria-label="Formula answer area" tabindex="0">
+          <span class="empty-message">Drag or click symbols here</span>
+        </div>
+
+        <div class="token-bank" aria-label="Symbol bank">
+          <div class="bank-row">
+            <span class="bank-label">Sentence letters</span>
+            <div id="letterTokens" class="token-list"></div>
+          </div>
+          <div class="bank-row">
+            <span class="bank-label">Connectives</span>
+            <div id="connectiveTokens" class="token-list"></div>
+          </div>
+          <div class="bank-row">
+            <span class="bank-label">Parentheses</span>
+            <div id="parenTokens" class="token-list"></div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <button class="btn primary" id="checkBtn">Check answer</button>
+          <button class="btn secondary" id="undoBtn">Undo</button>
+          <button class="btn secondary" id="clearBtn">Clear</button>
+          <button class="btn ghost" id="hintBtn">Show hint</button>
+          <button class="btn ghost" id="nextBtn">Next sentence</button>
+        </div>
+
+        <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
+      </section>
+
+      <aside class="panel side-panel">
+        <div class="mode-row">
+          <label for="difficulty"><strong>Difficulty</strong></label>
+          <select id="difficulty">
+            <option value="all">All levels</option>
+            <option value="1">Level 1: Basic</option>
+            <option value="2">Level 2: Compound</option>
+            <option value="3">Level 3: Nested</option>
+          </select>
+        </div>
+
+        <h2>Connective key</h2>
+        <div class="legend">
+          <div class="symbol">¬</div><div>not</div>
+          <div class="symbol">∧</div><div>and</div>
+          <div class="symbol">∨</div><div>or</div>
+          <div class="symbol">→</div><div>if … then</div>
+          <div class="symbol">↔</div><div>if and only if</div>
+        </div>
+
+        <div class="side-section">
+          <h2>How checking works</h2>
+          <p>Your formula and the target formula are evaluated on every possible truth-value assignment. They count as the same answer whenever their truth tables match.</p>
+        </div>
+
+        <div class="side-section">
+          <h2>Tips</h2>
+          <ul>
+            <li>Click a tile as an alternative to dragging it.</li>
+            <li>Click a tile in the answer area to remove it.</li>
+            <li>Use parentheses whenever grouping could be unclear.</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    const exercises = [
+      {
+        level: 1,
+        sentence: "Mina studies and Theo sleeps.",
+        dictionary: { M: "Mina studies", T: "Theo sleeps" },
+        target: "M&T",
+        hint: "Use conjunction between the two sentence letters."
+      },
+      {
+        level: 1,
+        sentence: "It is not the case that the library is open.",
+        dictionary: { L: "The library is open" },
+        target: "!L",
+        hint: "Negation goes immediately before the sentence letter."
+      },
+      {
+        level: 1,
+        sentence: "Either Ava cooks or Ben orders takeout.",
+        dictionary: { A: "Ava cooks", B: "Ben orders takeout" },
+        target: "A|B",
+        hint: "Use disjunction between A and B."
+      },
+      {
+        level: 2,
+        sentence: "If the alarm rings, then the guard wakes up.",
+        dictionary: { A: "The alarm rings", G: "The guard wakes up" },
+        target: "A>G",
+        hint: "The antecedent goes before the conditional arrow."
+      },
+      {
+        level: 2,
+        sentence: "The concert happens only if the singer arrives.",
+        dictionary: { C: "The concert happens", S: "The singer arrives" },
+        target: "C>S",
+        hint: "‘P only if Q’ translates as P → Q."
+      },
+      {
+        level: 2,
+        sentence: "The server is online if and only if the status light is green.",
+        dictionary: { S: "The server is online", G: "The status light is green" },
+        target: "S=G",
+        hint: "Use the biconditional."
+      },
+      {
+        level: 2,
+        sentence: "Neither Priya nor Omar is late.",
+        dictionary: { P: "Priya is late", O: "Omar is late" },
+        target: "!(P|O)",
+        hint: "Negate the entire disjunction. An equivalent conjunction of negations also works."
+      },
+      {
+        level: 3,
+        sentence: "If Nora practices and Leo listens, then the duet improves.",
+        dictionary: { N: "Nora practices", L: "Leo listens", D: "The duet improves" },
+        target: "(N&L)>D",
+        hint: "The whole conjunction is the antecedent."
+      },
+      {
+        level: 3,
+        sentence: "Ravi travels only if either the train runs or the highway is clear.",
+        dictionary: { R: "Ravi travels", T: "The train runs", H: "The highway is clear" },
+        target: "R>(T|H)",
+        hint: "The disjunction belongs on the right side of the conditional."
+      },
+      {
+        level: 3,
+        sentence: "If the museum is open, then the café is open and the guide is present.",
+        dictionary: { M: "The museum is open", C: "The café is open", G: "The guide is present" },
+        target: "M>(C&G)",
+        hint: "The consequent is a conjunction."
+      },
+      {
+        level: 3,
+        sentence: "The team wins exactly when it trains and it does not panic.",
+        dictionary: { W: "The team wins", T: "The team trains", P: "The team panics" },
+        target: "W=(T&!P)",
+        hint: "“Exactly when” is a biconditional; negate P inside the conjunction."
+      },
+      {
+        level: 3,
+        sentence: "It is not true that if Elena calls, Marcus answers.",
+        dictionary: { E: "Elena calls", M: "Marcus answers" },
+        target: "!(E>M)",
+        hint: "Negate the entire conditional, not just one part."
+      }
+    ];
+
+    const displayToInternal = { "¬": "!", "∧": "&", "∨": "|", "→": ">", "↔": "=" };
+    const internalToDisplay = { "!": "¬", "&": "∧", "|": "∨", ">": "→", "=": "↔" };
+
+    let current = null;
+    let currentIndex = -1;
+    let answer = [];
+    let score = 0;
+    let attempted = 0;
+    let checkedCurrent = false;
+
+    const promptText = document.getElementById("promptText");
+    const dictionary = document.getElementById("dictionary");
+    const answerZone = document.getElementById("answerZone");
+    const letterTokens = document.getElementById("letterTokens");
+    const connectiveTokens = document.getElementById("connectiveTokens");
+    const parenTokens = document.getElementById("parenTokens");
+    const feedback = document.getElementById("feedback");
+    const difficulty = document.getElementById("difficulty");
+
+    function makeToken(symbol, type) {
+      const el = document.createElement("button");
+      el.type = "button";
+      el.className = `token ${type}`;
+      el.textContent = symbol;
+      el.draggable = true;
+      el.setAttribute("aria-label", `Add ${symbol}`);
+      el.addEventListener("dragstart", e => {
+        e.dataTransfer.setData("text/plain", symbol);
+        e.dataTransfer.effectAllowed = "copy";
+      });
+      el.addEventListener("click", () => addToken(symbol));
+      return el;
+    }
+
+    function renderBanks() {
+      letterTokens.innerHTML = "";
+      connectiveTokens.innerHTML = "";
+      parenTokens.innerHTML = "";
+
+      Object.keys(current.dictionary).forEach(letter => letterTokens.appendChild(makeToken(letter, "letter")));
+      ["¬", "∧", "∨", "→", "↔"].forEach(sym => connectiveTokens.appendChild(makeToken(sym, "connective")));
+      ["(", ")"].forEach(sym => parenTokens.appendChild(makeToken(sym, "paren")));
+    }
+
+    function renderAnswer() {
+      answerZone.innerHTML = "";
+      if (!answer.length) {
+        const span = document.createElement("span");
+        span.className = "empty-message";
+        span.textContent = "Drag or click symbols here";
+        answerZone.appendChild(span);
+        return;
+      }
+
+      answer.forEach((sym, index) => {
+        const el = document.createElement("button");
+        el.type = "button";
+        const type = /[A-Z]/.test(sym) ? "letter" : /[()]/.test(sym) ? "paren" : "connective";
+        el.className = `token answer-token ${type}`;
+        el.textContent = sym;
+        el.title = "Click to remove";
+        el.addEventListener("click", () => {
+          answer.splice(index, 1);
+          renderAnswer();
+          hideFeedback();
+        });
+        answerZone.appendChild(el);
+      });
+    }
+
+    function addToken(symbol) {
+      answer.push(symbol);
+      renderAnswer();
+      hideFeedback();
+    }
+
+    function hideFeedback() {
+      feedback.className = "feedback";
+      feedback.textContent = "";
+    }
+
+    function showFeedback(kind, message) {
+      feedback.className = `feedback show ${kind}`;
+      feedback.textContent = message;
+    }
+
+    function availableExercises() {
+      const value = difficulty.value;
+      return value === "all" ? exercises : exercises.filter(e => String(e.level) === value);
+    }
+
+    function loadExercise(next = true) {
+      const pool = availableExercises();
+      if (!pool.length) return;
+
+      let candidate;
+      if (pool.length === 1) {
+        candidate = pool[0];
+      } else {
+        do {
+          candidate = pool[Math.floor(Math.random() * pool.length)];
+        } while (candidate === current);
+      }
+
+      current = candidate;
+      currentIndex = exercises.indexOf(candidate);
+      promptText.textContent = current.sentence;
+      dictionary.innerHTML = Object.entries(current.dictionary)
+        .map(([letter, text]) => `<div><code>${letter}</code> = ${text}</div>`)
+        .join("");
+      answer = [];
+      checkedCurrent = false;
+      renderBanks();
+      renderAnswer();
+      hideFeedback();
+    }
+
+    function tokenize(input) {
+      return input.replace(/\s+/g, "").split("");
+    }
+
+    class Parser {
+      constructor(tokens, variables) {
+        this.tokens = tokens;
+        this.pos = 0;
+        this.variables = variables;
+      }
+
+      peek() { return this.tokens[this.pos]; }
+      take() { return this.tokens[this.pos++]; }
+
+      parse() {
+        if (!this.tokens.length) throw new Error("Your answer is empty.");
+        const node = this.parseBiconditional();
+        if (this.pos !== this.tokens.length) throw new Error(`Unexpected symbol “${this.peek()}”.`);
+        return node;
+      }
+
+      parseBiconditional() {
+        let left = this.parseConditional();
+        while (this.peek() === "=") {
+          this.take();
+          left = { type: "bin", op: "=", left, right: this.parseConditional() };
+        }
+        return left;
+      }
+
+      parseConditional() {
+        let left = this.parseOr();
+        if (this.peek() === ">") {
+          this.take();
+          return { type: "bin", op: ">", left, right: this.parseConditional() };
+        }
+        return left;
+      }
+
+      parseOr() {
+        let left = this.parseAnd();
+        while (this.peek() === "|") {
+          this.take();
+          left = { type: "bin", op: "|", left, right: this.parseAnd() };
+        }
+        return left;
+      }
+
+      parseAnd() {
+        let left = this.parseNot();
+        while (this.peek() === "&") {
+          this.take();
+          left = { type: "bin", op: "&", left, right: this.parseNot() };
+        }
+        return left;
+      }
+
+      parseNot() {
+        if (this.peek() === "!") {
+          this.take();
+          return { type: "not", child: this.parseNot() };
+        }
+        return this.parseAtom();
+      }
+
+      parseAtom() {
+        const token = this.peek();
+        if (token === "(") {
+          this.take();
+          const node = this.parseBiconditional();
+          if (this.take() !== ")") throw new Error("A closing parenthesis is missing.");
+          return node;
+        }
+        if (/[A-Z]/.test(token || "")) {
+          if (!this.variables.includes(token)) throw new Error(`The letter ${token} is not used in this problem.`);
+          this.take();
+          return { type: "var", name: token };
+        }
+        if (token === ")") throw new Error("There is an extra closing parenthesis.");
+        throw new Error(token ? `Unexpected symbol “${token}”.` : "The formula ends too soon.");
+      }
+    }
+
+    function evaluate(node, assignment) {
+      if (node.type === "var") return assignment[node.name];
+      if (node.type === "not") return !evaluate(node.child, assignment);
+      const a = evaluate(node.left, assignment);
+      const b = evaluate(node.right, assignment);
+      if (node.op === "&") return a && b;
+      if (node.op === "|") return a || b;
+      if (node.op === ">") return !a || b;
+      if (node.op === "=") return a === b;
+      throw new Error("Unknown connective.");
+    }
+
+    function parseFormula(formula, variables) {
+      return new Parser(tokenize(formula), variables).parse();
+    }
+
+    function equivalent(formulaA, formulaB, variables) {
+      const a = parseFormula(formulaA, variables);
+      const b = parseFormula(formulaB, variables);
+      const rows = 2 ** variables.length;
+      for (let i = 0; i < rows; i++) {
+        const assignment = {};
+        variables.forEach((v, idx) => {
+          assignment[v] = Boolean((i >> idx) & 1);
+        });
+        if (evaluate(a, assignment) !== evaluate(b, assignment)) return false;
+      }
+      return true;
+    }
+
+    function toInternal(symbols) {
+      return symbols.map(s => displayToInternal[s] || s).join("");
+    }
+
+    function pretty(formula) {
+      return formula.split("").map(ch => internalToDisplay[ch] || ch).join("");
+    }
+
+    document.getElementById("checkBtn").addEventListener("click", () => {
+      const variables = Object.keys(current.dictionary);
+      const userFormula = toInternal(answer);
+      try {
+        const isCorrect = equivalent(userFormula, current.target, variables);
+        if (!checkedCurrent) {
+          attempted++;
+          if (isCorrect) score++;
+          checkedCurrent = true;
+          document.getElementById("score").textContent = score;
+          document.getElementById("attempted").textContent = attempted;
+        }
+
+        if (isCorrect) {
+          showFeedback("good", "Correct — your formula is logically equivalent to the target translation.");
+        } else {
+          showFeedback("bad", "Not equivalent yet. Check the main connective and the scope of each connective.");
+        }
+      } catch (err) {
+        showFeedback("warn", err.message);
+      }
+    });
+
+    document.getElementById("undoBtn").addEventListener("click", () => {
+      answer.pop();
+      renderAnswer();
+      hideFeedback();
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      answer = [];
+      renderAnswer();
+      hideFeedback();
+    });
+
+    document.getElementById("hintBtn").addEventListener("click", () => {
+      showFeedback("warn", current.hint);
+    });
+
+    document.getElementById("nextBtn").addEventListener("click", () => loadExercise());
+    difficulty.addEventListener("change", () => loadExercise());
+
+    answerZone.addEventListener("dragover", e => {
+      e.preventDefault();
+      answerZone.classList.add("dragover");
+      e.dataTransfer.dropEffect = "copy";
+    });
+
+    answerZone.addEventListener("dragleave", () => answerZone.classList.remove("dragover"));
+    answerZone.addEventListener("drop", e => {
+      e.preventDefault();
+      answerZone.classList.remove("dragover");
+      const symbol = e.dataTransfer.getData("text/plain");
+      if (symbol) addToken(symbol);
+    });
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Backspace" && document.activeElement === answerZone) {
+        e.preventDefault();
+        answer.pop();
+        renderAnswer();
+      }
+    });
+
+    loadExercise();
+  </script>
+</body>
+</html>
