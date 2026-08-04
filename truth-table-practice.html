@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Truth Table Practice</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --ink: #172033;
+      --muted: #62708a;
+      --line: #b8c1d1;
+      --accent: #2f67d8;
+      --accent-dark: #1f4fae;
+      --true-bg: #dff7e7;
+      --true-ink: #176b39;
+      --false-bg: #ffe3e3;
+      --false-ink: #a12626;
+      --empty-bg: #ffffff;
+      --focus: #ffbf47;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      touch-action: manipulation;
+    }
+
+    .app {
+      width: min(1400px, 100%);
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      line-height: 1;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      font-size: clamp(1rem, 1.7vw, 1.35rem);
+      color: var(--muted);
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button,
+    select {
+      font: inherit;
+    }
+
+    .control-button,
+    select {
+      min-height: 56px;
+      padding: 0 20px;
+      border: 2px solid var(--accent);
+      border-radius: 14px;
+      background: var(--panel);
+      color: var(--accent-dark);
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .control-button.primary {
+      color: white;
+      background: var(--accent);
+    }
+
+    .control-button:focus-visible,
+    select:focus-visible,
+    .truth-cell:focus-visible {
+      outline: 5px solid var(--focus);
+      outline-offset: 3px;
+    }
+
+    .card {
+      background: var(--panel);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 8px 28px rgba(35, 48, 75, 0.12);
+      overflow-x: auto;
+    }
+
+    .prompt {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 84px;
+      margin-bottom: 18px;
+      padding: 14px 20px;
+      border: 3px solid #d6dce8;
+      border-radius: 16px;
+      background: #fbfcff;
+      text-align: center;
+      font-size: clamp(1.8rem, 3.5vw, 3rem);
+      font-weight: 800;
+    }
+
+    table {
+      width: 100%;
+      min-width: 720px;
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: fixed;
+      overflow: hidden;
+      border: 3px solid var(--line);
+      border-radius: 16px;
+    }
+
+    th,
+    td {
+      border-right: 2px solid var(--line);
+      border-bottom: 2px solid var(--line);
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    th:last-child,
+    td:last-child {
+      border-right: 0;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    th {
+      height: 82px;
+      padding: 10px;
+      background: #eaf0fb;
+      font-size: clamp(1.25rem, 2vw, 1.9rem);
+    }
+
+    .truth-cell {
+      width: 100%;
+      min-height: 92px;
+      border: 0;
+      background: var(--empty-bg);
+      color: var(--ink);
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      font-weight: 900;
+      cursor: pointer;
+      transition: background 120ms ease, transform 80ms ease;
+    }
+
+    .truth-cell:active {
+      transform: scale(0.97);
+    }
+
+    .truth-cell.true {
+      background: var(--true-bg);
+      color: var(--true-ink);
+    }
+
+    .truth-cell.false {
+      background: var(--false-bg);
+      color: var(--false-ink);
+    }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+      font-size: 1.15rem;
+      color: var(--muted);
+    }
+
+    .legend strong {
+      color: var(--ink);
+    }
+
+    @media (max-width: 700px) {
+      .app {
+        padding: 12px;
+      }
+
+      .card {
+        padding: 12px;
+      }
+
+      .control-button,
+      select {
+        min-height: 52px;
+        padding: 0 14px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .truth-cell {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <h1>Truth Table Practice</h1>
+        <p class="subtitle">Tap any cell to cycle: empty → T → F</p>
+      </div>
+
+      <div class="controls" aria-label="Practice controls">
+        <label>
+          <span class="sr-only">Choose an expression</span>
+          <select id="expressionSelect" aria-label="Choose an expression">
+            <option value="and">p ∧ q</option>
+            <option value="or">p ∨ q</option>
+            <option value="implication">p → q</option>
+            <option value="biconditional">p ↔ q</option>
+            <option value="notAnd">¬(p ∧ q)</option>
+          </select>
+        </label>
+        <button class="control-button" id="clearButton" type="button">Clear</button>
+        <button class="control-button primary" id="newButton" type="button">New Table</button>
+      </div>
+    </header>
+
+    <section class="card" aria-labelledby="expressionTitle">
+      <div class="prompt" id="expressionTitle">Complete the truth table for p ∧ q</div>
+      <div id="tableContainer"></div>
+      <div class="legend">
+        <span><strong>Tap:</strong> change a cell</span>
+        <span><strong>Clear:</strong> erase all entries</span>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const expressions = {
+      and: {
+        label: "p ∧ q",
+        headers: ["p", "q", "p ∧ q"]
+      },
+      or: {
+        label: "p ∨ q",
+        headers: ["p", "q", "p ∨ q"]
+      },
+      implication: {
+        label: "p → q",
+        headers: ["p", "q", "p → q"]
+      },
+      biconditional: {
+        label: "p ↔ q",
+        headers: ["p", "q", "p ↔ q"]
+      },
+      notAnd: {
+        label: "¬(p ∧ q)",
+        headers: ["p", "q", "p ∧ q", "¬(p ∧ q)"]
+      }
+    };
+
+    const states = ["", "T", "F"];
+    const tableContainer = document.getElementById("tableContainer");
+    const expressionSelect = document.getElementById("expressionSelect");
+    const expressionTitle = document.getElementById("expressionTitle");
+    const clearButton = document.getElementById("clearButton");
+    const newButton = document.getElementById("newButton");
+
+    function createTable(expressionKey) {
+      const expression = expressions[expressionKey];
+      expressionTitle.textContent = `Complete the truth table for ${expression.label}`;
+
+      const table = document.createElement("table");
+      table.setAttribute("aria-label", `Truth table for ${expression.label}`);
+
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+
+      expression.headers.forEach(header => {
+        const th = document.createElement("th");
+        th.scope = "col";
+        th.textContent = header;
+        headerRow.appendChild(th);
+      });
+
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+
+      for (let row = 0; row < 4; row++) {
+        const tr = document.createElement("tr");
+
+        expression.headers.forEach((header, column) => {
+          const td = document.createElement("td");
+          const button = document.createElement("button");
+
+          button.type = "button";
+          button.className = "truth-cell";
+          button.dataset.stateIndex = "0";
+          button.setAttribute(
+            "aria-label",
+            `Row ${row + 1}, column ${header}, empty. Tap to change.`
+          );
+
+          button.addEventListener("click", () => cycleCell(button, row, header));
+          td.appendChild(button);
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+      }
+
+      table.appendChild(tbody);
+      tableContainer.replaceChildren(table);
+    }
+
+    function cycleCell(cell, row, header) {
+      let nextIndex = (Number(cell.dataset.stateIndex) + 1) % states.length;
+      const value = states[nextIndex];
+
+      cell.dataset.stateIndex = String(nextIndex);
+      cell.textContent = value;
+      cell.classList.toggle("true", value === "T");
+      cell.classList.toggle("false", value === "F");
+      cell.setAttribute(
+        "aria-label",
+        `Row ${row + 1}, column ${header}, ${value === "" ? "empty" : value}. Tap to change.`
+      );
+    }
+
+    function clearTable() {
+      document.querySelectorAll(".truth-cell").forEach(cell => {
+        cell.dataset.stateIndex = "0";
+        cell.textContent = "";
+        cell.classList.remove("true", "false");
+      });
+    }
+
+    expressionSelect.addEventListener("change", event => {
+      createTable(event.target.value);
+    });
+
+    clearButton.addEventListener("click", clearTable);
+
+    newButton.addEventListener("click", () => {
+      const keys = Object.keys(expressions);
+      const currentIndex = keys.indexOf(expressionSelect.value);
+      const nextKey = keys[(currentIndex + 1) % keys.length];
+      expressionSelect.value = nextKey;
+      createTable(nextKey);
+    });
+
+    createTable(expressionSelect.value);
+  </script>
+</body>
+</html>
