@@ -543,7 +543,7 @@
 
         <h2>Connective key</h2>
         <div class="legend">
-          <div class="symbol">¬</div><div>not</div>
+          <div class="symbol">~</div><div>not</div>
           <div class="symbol">∧</div><div>and</div>
           <div class="symbol">∨</div><div>or</div>
           <div class="symbol">→</div><div>if … then</div>
@@ -655,8 +655,8 @@
       }
     ];
 
-    const displayToInternal = { "¬": "!", "∧": "&", "∨": "|", "→": ">", "↔": "=" };
-    const internalToDisplay = { "!": "¬", "&": "∧", "|": "∨", ">": "→", "=": "↔" };
+    const displayToInternal = { "~": "!", "∧": "&", "∨": "|", "→": ">", "↔": "=" };
+    const internalToDisplay = { "!": "~", "&": "∧", "|": "∨", ">": "→", "=": "↔" };
 
     let current = null;
     let currentIndex = -1;
@@ -695,7 +695,7 @@
       parenTokens.innerHTML = "";
 
       Object.keys(current.dictionary).forEach(letter => letterTokens.appendChild(makeToken(letter, "letter")));
-      ["¬", "∧", "∨", "→", "↔"].forEach(sym => connectiveTokens.appendChild(makeToken(sym, "connective")));
+      ["~", "∧", "∨", "→", "↔"].forEach(sym => connectiveTokens.appendChild(makeToken(sym, "connective")));
       ["(", ")"].forEach(sym => parenTokens.appendChild(makeToken(sym, "paren")));
     }
 
